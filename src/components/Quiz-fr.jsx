@@ -1,7 +1,61 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Volume2, Star, CheckCircle, XCircle } from 'lucide-react'
 import confetti from 'canvas-confetti'
+import { useSpeech } from '../hooks/useSpeech'
+
+// Sound effects using AudioContext
+const playSound = (type) => {
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)()
+  const oscillator = audioContext.createOscillator()
+  const gainNode = audioContext.createGain()
+  
+  oscillator.connect(gainNode)
+  gainNode.connect(audioContext.destination)
+  
+  if (type === 'correct') {
+    // Happy ascending sound
+    oscillator.frequency.setValueAtTime(523.25, audioContext.currentTime) // C5
+    oscillator.frequency.exponentialRampToValueAtTime(1046.5, audioContext.currentTime + 0.1) // C6
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3)
+    oscillator.start(audioContext.currentTime)
+    oscillator.stop(audioContext.currentTime + 0.3)
+    
+    // Second note for chord
+    const osc2 = audioContext.createOscillator()
+    const gain2 = audioContext.createGain()
+    osc2.connect(gain2)
+    gain2.connect(audioContext.destination)
+    osc2.frequency.setValueAtTime(659.25, audioContext.currentTime + 0.1) // E5
+    gain2.gain.setValueAtTime(0.2, audioContext.currentTime + 0.1)
+    gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4)
+    osc2.start(audioContext.currentTime + 0.1)
+    osc2.stop(audioContext.currentTime + 0.4)
+  } else if (type === 'wrong') {
+    // Low descending sound
+    oscillator.frequency.setValueAtTime(300, audioContext.currentTime)
+    oscillator.frequency.exponentialRampToValueAtTime(150, audioContext.currentTime + 0.3)
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3)
+    oscillator.start(audioContext.currentTime)
+    oscillator.stop(audioContext.currentTime + 0.3)
+  } else if (type === 'complete') {
+    // Victory fanfare
+    const notes = [523.25, 659.25, 783.99, 1046.5] // C5, E5, G5, C6
+    notes.forEach((freq, i) => {
+      const osc = audioContext.createOscillator()
+      const gain = audioContext.createGain()
+      osc.connect(gain)
+      gain.connect(audioContext.destination)
+      osc.frequency.setValueAtTime(freq, audioContext.currentTime + i * 0.15)
+      gain.gain.setValueAtTime(0.3, audioContext.currentTime + i * 0.15)
+      gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.15 + 0.4)
+      osc.start(audioContext.currentTime + i * 0.15)
+      osc.stop(audioContext.currentTime + i * 0.15 + 0.4)
+    })
+  }
+}
 
 function QuizFr({ lesson, onBack, onComplete }) {
   const [currentQuestion, setCurrentQuestion] = useState(0)
@@ -11,9 +65,26 @@ function QuizFr({ lesson, onBack, onComplete }) {
   const [score, setScore] = useState(0)
   const [showReward, setShowReward] = useState(false)
   const [answeredQuestions, setAnsweredQuestions] = useState([])
+  const { speak, speaking, supported } = useSpeech()
 
   const question = lesson.questions[currentQuestion]
   const progress = ((currentQuestion + 1) / lesson.questions.length) * 100
+
+  // Extract French word to speak from question
+  const getFrenchText = () => {
+    // Try to extract the French word from the question
+    const match = question.question.match(/"([^"]+)"/) || question.question.match(/'([^']+)'/)
+    if (match) return match[1]
+    // Otherwise speak the correct answer
+    return question.options[question.correct]
+  }
+
+  const handleSpeak = () => {
+    if (supported) {
+      const text = getFrenchText()
+      speak(text, 'fr-FR')
+    }
+  }
 
   const handleAnswer = (index) => {
     if (selectedAnswer !== null) return
@@ -24,12 +95,15 @@ function QuizFr({ lesson, onBack, onComplete }) {
     
     if (correct) {
       setScore(s => s + 1)
+      playSound('correct')
       confetti({
         particleCount: 50,
         spread: 60,
         origin: { y: 0.7 },
         colors: ['#48bb78', '#ffd700']
       })
+    } else {
+      playSound('wrong')
     }
     
     setShowResult(true)
@@ -188,24 +262,28 @@ function QuizFr({ lesson, onBack, onComplete }) {
               <h2 className="question-text">{question.question}</h2>
               <p className="question-hint">{question.hint}</p>
               
-              {question.audio && (
-                <button
-                  style={{
-                    background: '#667eea',
-                    border: 'none',
-                    borderRadius: '50%',
-                    width: '50px',
-                    height: '50px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    margin: '20px auto 0'
-                  }}
-                >
-                  <Volume2 size={24} color="white" />
-                </button>
-              )}
+              <button
+                onClick={handleSpeak}
+                disabled={speaking}
+                style={{
+                  background: speaking ? '#9f7aea' : '#667eea',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '50px',
+                  height: '50px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: supported ? 'pointer' : 'not-allowed',
+                  margin: '20px auto 0',
+                  opacity: supported ? 1 : 0.5,
+                  transition: 'all 0.3s ease',
+                  animation: speaking ? 'pulse 1s infinite' : 'none'
+                }}
+                title={supported ? 'Écouter la prononciation' : 'Audio non supporté'}
+              >
+                <Volume2 size={24} color="white" />
+              </button>
             </div>
 
             {/* Options */}

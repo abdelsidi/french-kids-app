@@ -298,6 +298,9 @@ body {
   box-shadow: 0 25px 50px rgba(0,0,0,0.3);
   z-index: 1000;
   min-width: 350px;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .reward-popup h2 {
@@ -1156,7 +1159,8 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .options-grid { grid-template-columns: 1fr; }
+  .app-container { padding: 10px; }
+  .options-grid { grid-template-columns: 1fr; gap: 10px; }
   .game-grid { grid-template-columns: 1fr; }
   .score-board { flex-wrap: wrap; gap: 10px; }
   .nav-menu { justify-content: center; }
@@ -1167,4 +1171,44 @@ body {
   .page-title { font-size: 1.3rem; }
   .alphabet-tabs { flex-wrap: wrap; }
   .tab-btn { flex: 1; min-width: 100px; justify-content: center; }
+  
+  /* Fix popup on mobile */
+  .reward-popup {
+    min-width: auto;
+    width: 90vw;
+    padding: 25px;
+    border-radius: 20px;
+  }
+  
+  .reward-popup h2 {
+    font-size: 1.5rem;
+  }
+  
+  .reward-popup .points-earned {
+    font-size: 2rem;
+  }
+  
+  /* Fix quiz container on mobile */
+  .quiz-container {
+    padding: 0 10px;
+  }
+  
+  .question-box {
+    padding: 25px 15px;
+  }
+  
+  .question-text {
+    font-size: 1.5rem;
+  }
+  
+  .option-btn {
+    padding: 18px 15px;
+    font-size: 1.1rem;
+  }
+  
+  /* Ensure buttons are clickable */
+  .option-btn, .nav-arrow, .next-quiz-btn, .restart-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
