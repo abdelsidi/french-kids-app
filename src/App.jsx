@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Star, Trophy, Flame, Home, BookOpen, Award, User, Type, Palette } from 'lucide-react'
+import { Star, Trophy, Flame, Home, BookOpen, Award, User, Type, Palette, Heart } from 'lucide-react'
 import confetti from 'canvas-confetti'
 import { lessonsFr as lessons } from './data/lessons-fr'
 import QuizFr from './components/Quiz-fr'
@@ -8,6 +8,7 @@ import BadgesFr from './components/Badges-fr'
 import ProgressFr from './components/Progress-fr'
 import Alphabet from './components/Alphabet'
 import AvatarSelector from './components/AvatarSelector'
+import SupportPage from './components/SupportPage'
 
 function App() {
   const [currentView, setCurrentView] = useState('home')
@@ -142,6 +143,9 @@ function App() {
           />
         )
 
+      case 'support':
+        return <SupportPage onBack={() => setCurrentView('home')} />
+
       default:
         return null
     }
@@ -220,6 +224,13 @@ function App() {
         >
           <Award size={18} style={{marginLeft: '8px'}} />
           الإنجازات
+        </button>
+        <button
+          className={`nav-btn ${currentView === 'support' ? 'active' : ''}`}
+          onClick={() => setCurrentView('support')}
+        >
+          <Heart size={18} style={{marginLeft: '8px'}} />
+          ❤️ ادعمنا
         </button>
       </nav>
 
